@@ -16,7 +16,8 @@ def index():
 # url中的变量
 @app.route('/user/<name>')
 def user(name):
-        return '<h1>hello,%s!</h1>' %name
+        #return '<h1>hello,%s!</h1>' %name
+        return render_template('user.html', name=name)
 
 if __name__=='__main__':
         app.run()
