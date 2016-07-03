@@ -9,6 +9,9 @@ from datetime import datetime
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField
 from wtforms.validators import Required,Email
+from flask.ext.sqlalchemy import SQLAlchemy
+
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 app=Flask(__name__)
@@ -17,11 +20,40 @@ bootstrap = Bootstrap(app)
 moment = Moment(app)
 app.config['SECRET_KEY'] = 'safekeys'
 
+#数据库
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+    'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+db = SQLAlchemy(app)
+
 #wtf表单.p35还有好多种类,要试一试
 class NameForm(Form):
     name = StringField('What is your name?', validators=[Required()])
     email = StringField('What is your email?',validators=[Email()])
     submit = SubmitField('Submit')
+
+#数据库模型定义
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    #关系,一对多
+    users = db.relationship('User',backref='role')
+    def __repr__(self):
+        return '<Role %r>' % self.name
+
+class User(db.Model):
+    #表名
+    __tablename__ = 'users'
+    #属性
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    #关系,一对一
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
