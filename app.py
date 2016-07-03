@@ -1,7 +1,7 @@
 #coding:utf-8
-
+import os
 #flask-script module Manager class
-#from flask.ext.script import Manager
+from flask.ext.script import Manager, Shell
 from flask import Flask, jsonify,render_template,session, redirect, url_for,flash
 from flask.ext.bootstrap import Bootstrap
 from flask.ext.moment import Moment
@@ -10,21 +10,22 @@ from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField
 from wtforms.validators import Required,Email
 from flask.ext.sqlalchemy import SQLAlchemy
+from flask.ext.migrate import Migrate, MigrateCommand
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-
 app=Flask(__name__)
-#manager = Manager(app)
-bootstrap = Bootstrap(app)
-moment = Moment(app)
 app.config['SECRET_KEY'] = 'safekeys'
-
 #数据库
 app.config['SQLALCHEMY_DATABASE_URI'] =\
     'sqlite:///' + os.path.join(basedir, 'data.sqlite')
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 db = SQLAlchemy(app)
+
+manager = Manager(app)
+bootstrap = Bootstrap(app)
+moment = Moment(app)
+migrate = Migrate(app, db)
 
 #wtf表单.p35还有好多种类,要试一试
 class NameForm(Form):
@@ -53,25 +54,48 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.username
 
+#自动导入对象,
+def make_shell_context():
+    return dict(app=app,db=db,User=User, Role=Role)
+#可以被flask-script调用
+manager.add_command("shell", Shell(make_context = make_shell_context))
+manager.add_command('db', MigrateCommand)
+
+
+
+
 
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    #name = None
     form = NameForm()
     if form.validate_on_submit():
-        old_name = session.get('name')
-        if old_name is not None and old_name != form.name.data:
-            #如果名字变了就闪现信息
-            flash('Looks like you have changed your name!')
+        user = User.query.filter_by(username=form.name.data).first()
+        if user is None:
+            user = User(username=form.name.data)
+            db.session.add(user)
+            session['known'] = False
+        else:
+            session['known'] = True
         session['name'] = form.name.data
         return redirect(url_for('index'))
-        #name = form.name.data
-        #form.name.data = ''
-    #重定向,解决刷新重复post
-    return render_template('index.html', form=form, name=session.get('name'), current_time=datetime.utcnow())
-    #return render_template('index.html', form=form, name=name,current_time=datetime.utcnow(), email=email)
-	#return render_template('index.html',current_time=datetime.utcnow())
+    return render_template('index.html', form=form, name=session.get('name'),
+                           known=session.get('known', False))
+    # #name = None
+    # form = NameForm()
+    # if form.validate_on_submit():
+    #     old_name = session.get('name')
+    #     if old_name is not None and old_name != form.name.data:
+    #         #如果名字变了就闪现信息
+    #         flash('Looks like you have changed your name!')
+    #     session['name'] = form.name.data
+    #     return redirect(url_for('index'))
+    #     #name = form.name.data
+    #     #form.name.data = ''
+    # #重定向,解决刷新重复post
+    # return render_template('index.html', form=form, name=session.get('name'), current_time=datetime.utcnow())
+    # #return render_template('index.html', form=form, name=name,current_time=datetime.utcnow(), email=email)
+	# #return render_template('index.html',current_time=datetime.utcnow())
 
 
 # url中的变量
@@ -97,5 +121,5 @@ def internal_server_error(e):
 
 
 if __name__=='__main__':
-        app.run()
-	#manager.run()
+    #app.run()
+	manager.run()
