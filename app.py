@@ -1,9 +1,13 @@
 #coding:utf-8
 
-
+#flask-script module Manager class
+#from flask.ext.script import Manager
 from flask import Flask, jsonify,render_template
+from flask.ext.bootstrap import Bootstrap
 
 app=Flask(__name__)
+#manager = Manager(app)
+bootstrap = Bootstrap(app)
 
 @app.route('/')
 def index():
@@ -16,3 +20,4 @@ def user(name):
 
 if __name__=='__main__':
         app.run()
+	#manager.run()
