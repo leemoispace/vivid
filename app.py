@@ -20,7 +20,7 @@ app.config['SECRET_KEY'] = 'safekeys'
 #wtf表单.p35还有好多种类,要试一试
 class NameForm(Form):
     name = StringField('What is your name?', validators=[Required()])
-    email = IntegerField('what is your email?',validators=[Email()])
+    email = StringField('what is your email?',validators=[Email()])
     submit = SubmitField('Submit')
 
 @app.route('/', methods=['GET', 'POST'])
