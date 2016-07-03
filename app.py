@@ -20,7 +20,7 @@ app.config['SECRET_KEY'] = 'safekeys'
 #wtf表单.p35还有好多种类,要试一试
 class NameForm(Form):
     name = StringField('What is your name?', validators=[Required()])
-    email = StringField('what is your email?',validators=[Email()])
+    email = StringField('What is your email?',validators=[Email()])
     submit = SubmitField('Submit')
 
 @app.route('/', methods=['GET', 'POST'])
@@ -32,7 +32,7 @@ def index():
         email = form.email.data
         form.name.data = ''
         form.email.data = ''
-    return render_template('index.html', form=form, name=name,email=email)
+    return render_template('index.html', form=form, name=name,current_time=datetime.utcnow())#, email=email)
 	#return render_template('index.html',current_time=datetime.utcnow())
 
 
