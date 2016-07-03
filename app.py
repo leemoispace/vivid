@@ -3,7 +3,7 @@ app=Flask(__name__)
 
 @app.route('/')
 def index():
-        return 'vivid is beautiful,auto root restart'
+        return 'vivid is beautiful,auto root restart!'
 
 @app.route('/data')
 def name():
