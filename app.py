@@ -2,7 +2,7 @@
 
 #flask-script module Manager class
 #from flask.ext.script import Manager
-from flask import Flask, jsonify,render_template
+from flask import Flask, jsonify,render_template,session, redirect, url_for,flash
 from flask.ext.bootstrap import Bootstrap
 from flask.ext.moment import Moment
 from datetime import datetime
@@ -25,14 +25,20 @@ class NameForm(Form):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    name = None
+    #name = None
     form = NameForm()
     if form.validate_on_submit():
-        name = form.name.data
-        email = form.email.data
-        form.name.data = ''
-        form.email.data = ''
-    return render_template('index.html', form=form, name=name,current_time=datetime.utcnow())#, email=email)
+        old_name = session.get('name')
+        if old_name is not None and old_name != form.name.data:
+            #如果名字变了就闪现信息
+            flash('Looks like you have changed your name!')
+        session['name'] = form.name.data
+        return redirect(url_for('index'))
+        #name = form.name.data
+        #form.name.data = ''
+    #重定向,解决刷新重复post
+    return render_template('index.html', form=form, name=session.get('name'), current_time=datetime.utcnow())
+    #return render_template('index.html', form=form, name=name,current_time=datetime.utcnow(), email=email)
 	#return render_template('index.html',current_time=datetime.utcnow())
 
 
