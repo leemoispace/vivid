@@ -6,15 +6,35 @@ from flask import Flask, jsonify,render_template
 from flask.ext.bootstrap import Bootstrap
 from flask.ext.moment import Moment
 from datetime import datetime
+from flask.ext.wtf import Form
+from wtforms import StringField, SubmitField
+from wtforms.validators import Required,Email
+
 
 app=Flask(__name__)
 #manager = Manager(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
+app.config['SECRET_KEY'] = 'safekeys'
 
-@app.route('/')
+#wtf表单.p35还有好多种类,要试一试
+class NameForm(Form):
+    name = StringField('What is your name?', validators=[Required()])
+    email = IntegerField('what is your email?',validators=[Email()])
+    submit = SubmitField('Submit')
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-	return render_template('index.html',current_time=datetime.utcnow())
+    name = None
+    form = NameForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        form.name.data = ''
+        form.email.data = ''
+    return render_template('index.html', form=form, name=name,email=email)
+	#return render_template('index.html',current_time=datetime.utcnow())
+
 
 # url中的变量
 @app.route('/user/<name>')
