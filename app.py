@@ -1,5 +1,7 @@
 #coding:utf-8
 import os
+from threading import Thread
+
 #flask-script module Manager class
 from flask.ext.script import Manager, Shell
 from flask import Flask, jsonify,render_template,session, redirect, url_for,flash
@@ -11,6 +13,7 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import Required,Email
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.migrate import Migrate, MigrateCommand
+from flask.ext.mail import Message
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -22,16 +25,20 @@ app.config['SQLALCHEMY_DATABASE_URI'] =\
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 db = SQLAlchemy(app)
 
+#邮件 export MAIL_USERNAME=<Gmail username>
+app.config['MAIL_SERVER'] = 'smtp.googlemail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_SUBJECT_PREFIX'] = '[leemoispace]'
+app.config['MAIL_SENDER'] = 'Lrybus Admin <admin@leemoi.space>'
+
 manager = Manager(app)
 bootstrap = Bootstrap(app)
 moment = Moment(app)
 migrate = Migrate(app, db)
 
-#wtf表单.p35还有好多种类,要试一试
-class NameForm(Form):
-    name = StringField('What is your name?', validators=[Required()])
-    email = StringField('What is your email?',validators=[Email()])
-    submit = SubmitField('Submit')
 
 #数据库模型定义
 class Role(db.Model):
@@ -53,6 +60,27 @@ class User(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
     def __repr__(self):
         return '<User %r>' % self.username
+
+def send_email(to,subject,template,**kwargs):
+    msg=Message(app.config['MAIL_SUBJECT_PREFIX']+subject, sender=app.config['MAIL_SENDER'],recipients=[to])
+    msg.body=render_template(template+'.txt',**kwargs)
+    msg.html=render_template(template+'.html',**kwargs)
+    thr=Thread(target=send_async_email,args=[app,msg])
+    thr.start()
+    return thr
+    #mail.send(msg)
+
+def send_async_email(app,msg):
+    with app.app_context():
+        mail.send(msg)
+
+
+#wtf表单.p35还有好多种类,要试一试
+class NameForm(Form):
+    name = StringField('What is your name?', validators=[Required()])
+    email = StringField('What is your email?',validators=[Email()])
+    submit = SubmitField('Submit')
+
 
 #自动导入对象,
 def make_shell_context():
